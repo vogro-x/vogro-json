@@ -27,6 +27,12 @@ static void test_parse_null() {
     EXPECT_EQ_INT(LEPT_NULL, lept_get_type(&v));
 }
 
+static void test_parse_not_sigular(){
+    lept_value v;
+    v.type = LEPT_TRUE;
+    EXPECT_EQ_INT(LEPT_PARSE_ROOT_NOT_SINGULAR, lept_parse(&v, "null  a"));
+}
+
 static void test_parse_true() {
     lept_value v;
     v.type = LEPT_TRUE; // any valid type is ok for the init type
@@ -44,6 +50,7 @@ static void test_parse_false() {
 /* ... */
 
 static void test_parse() {
+    test_parse_not_sigular();
     test_parse_null();
     test_parse_true();
     test_parse_false();
