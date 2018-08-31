@@ -2,11 +2,18 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#define ISDIGIT(ch)         ((ch) >= '0' && (ch) <= '9')
+#define ISDIGIT1TO9(ch)     ((ch) >= '1' && (ch) <= '9')
 #define EXPECT(c, ch) do { assert(*c->json == (ch)); c->json++; } while(0)
 
 lept_type lept_get_type(const lept_value* v) {
     assert(v != NULL);
     return v->type;
+}
+
+double lept_get_number(const lept_value* v){
+    assert(v!=NULL && v->type==LEPT_NUMBER);
+    return v->n;
 }
 
 static void lept_parse_whitespace(lept_context* c) {
@@ -46,13 +53,93 @@ static int lept_parse_false(lept_context* c, lept_value* v) {
     return LEPT_PARSE_OK;
 }
 
+static int lept_parse_number(lept_context* c, lept_value* v) {
+    char* end;
+    /* \TODO validate number */
+
+    // 0-9
+    if(ISDIGIT(c->json[0])||c->json[0]=='-'){
+        if(c->json[0]=='-'){
+            c->json+=1;
+        }
+
+        if(c->json[0]=='0' && c->json[1]!='.'){
+            return LEPT_PARSE_INVALID_VALUE;
+        }
+
+        //循环直到小数点
+        while(c->json[0] != '.' &&c->json[0]!='E'&&c->json[0]!='e'&&c->json[0]!='\0'){
+            if(!ISDIGIT(c->json[0])){
+                return LEPT_PARSE_INVALID_VALUE;
+            }
+            c->json += 1;
+        }
+
+        if(c->json[0]=='E'&&c->json[0]=='e'){
+            c->json += 1;//跳过E,e
+            if(!ISDIGIT(c->json[0]) && c->json[0] != '+' && c->json[0] != '-') {
+                return LEPT_PARSE_INVALID_VALUE;
+            }
+
+            if(c->json[0] == '+' || c->json[0] == '-')
+                c->json += 1;
+
+            while(c->json[0]!='\0'){
+                if(!ISDIGIT(c->json[0]))
+                    return LEPT_PARSE_INVALID_VALUE;
+                c->json += 1;
+            }    
+        }
+
+        //当前c->json[0]指向小数点
+        if(c->json[0]=='.'){
+            c->json += 1; //跳过小数点
+            while(c->json[0]!='E'&&c->json[0]!='e'&&c->json[0]!='\0'){
+                if(!ISDIGIT(c->json[0])){
+                    return LEPT_PARSE_INVALID_VALUE;
+                }
+                c->json += 1;
+            }
+
+            //等于\0时表明校验到了结尾，校验成功
+            //等于E或者e时表明还需要解析指数部分
+            if(c->json[0]=='E'&&c->json[0]=='e'){
+                c->json += 1;//跳过E,e
+                if(!ISDIGIT(c->json[0]) && c->json[0] != '+' && c->json[0] != '-') {
+                    return LEPT_PARSE_INVALID_VALUE;
+                }
+
+                if(c->json[0] == '+' || c->json[0] == '-')
+                    c->json += 1;
+
+                while(c->json[0]!='\0'){
+                    if(!ISDIGIT(c->json[0]))
+                        return LEPT_PARSE_INVALID_VALUE;
+                    c->json += 1;
+                }    
+            }
+        }
+    }else {
+        //首字符不为[0-9,-]
+        return LEPT_PARSE_INVALID_VALUE;
+    }
+    
+
+    v->n = strtod(c->json, &end);
+    if (c->json == end)
+        return LEPT_PARSE_INVALID_VALUE;
+    c->json = end;
+    v->type = LEPT_NUMBER;
+    return LEPT_PARSE_OK;
+}
+
 static int lept_parse_value(lept_context* c, lept_value* v) {
     switch (*c->json) {
         case 'n':  return lept_parse_null(c, v);
         case 't':  return lept_parse_true(c, v);
         case 'f':  return lept_parse_false(c,v);
         case '\0': return LEPT_PARSE_EXPECT_VALUE;
-        default:   return LEPT_PARSE_INVALID_VALUE;
+        default:   return lept_parse_number(c,v);
     }
 }
 
@@ -61,6 +148,7 @@ int lept_parse(lept_value* v, const char* json) {
     assert(v != NULL);
     c.json = json;
     v->type = LEPT_NULL;
+    lept_parse_whitespace(&c);
     int ret;
     if ((ret = lept_parse_value(&c, v)) == LEPT_PARSE_OK) {
         lept_parse_whitespace(&c);
