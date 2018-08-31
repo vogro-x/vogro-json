@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>   
+#include <math.h>   
 
 #define ISDIGIT(ch)         ((ch) >= '0' && (ch) <= '9')
 #define ISDIGIT1TO9(ch)     ((ch) >= '1' && (ch) <= '9')
@@ -49,7 +51,7 @@ static int lept_parse_literal(lept_context* c, lept_value* v, char* json, size_t
 }
 
 static int lept_parse_number(lept_context* c, lept_value* v) {
-    char* end;
+    // char* end;
 
     const char* tmp = c->json;
     // 0-9,-
@@ -143,12 +145,17 @@ static int lept_parse_number(lept_context* c, lept_value* v) {
         return LEPT_PARSE_INVALID_VALUE;
     }
     
-    v->n = strtod(c->json, &end);
-    if (c->json == end)
-        return LEPT_PARSE_INVALID_VALUE;
-    c->json = end;
+    errno = 0;
+    v->n = strtod(c->json, NULL);
+    if (errno == ERANGE && (v->n == HUGE_VAL || v->n == -HUGE_VAL))
+        return LEPT_PARSE_NUMBER_TOO_BIG;
     v->type = LEPT_NUMBER;
+    c->json = tmp;//此时需要移动json指针的位置到末尾
     return LEPT_PARSE_OK;
+
+     
+    
+    
 }
 
 static int lept_parse_value(lept_context* c, lept_value* v) {
