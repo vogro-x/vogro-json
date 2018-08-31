@@ -1,6 +1,7 @@
 #include "leptjson.h"
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #define ISDIGIT(ch)         ((ch) >= '0' && (ch) <= '9')
 #define ISDIGIT1TO9(ch)     ((ch) >= '1' && (ch) <= '9')
@@ -55,67 +56,91 @@ static int lept_parse_false(lept_context* c, lept_value* v) {
 
 static int lept_parse_number(lept_context* c, lept_value* v) {
     char* end;
-    /* \TODO validate number */
 
-    // 0-9
-    if(ISDIGIT(c->json[0])||c->json[0]=='-'){
-        if(c->json[0]=='-'){
-            c->json+=1;
+    const char* tmp = c->json;
+    // 0-9,-
+    if(ISDIGIT(tmp[0])||tmp[0]=='-') {
+        if(tmp[0]=='-') {
+            tmp += 1;
         }
 
-        if(c->json[0]=='0' && c->json[1]!='.'){
+        if(tmp[0]=='0' && tmp[1]!='.' && tmp[1] != '\0') {
             return LEPT_PARSE_INVALID_VALUE;
         }
 
-        //循环直到小数点
-        while(c->json[0] != '.' &&c->json[0]!='E'&&c->json[0]!='e'&&c->json[0]!='\0'){
-            if(!ISDIGIT(c->json[0])){
+        
+        while(tmp[0] != '.' && tmp[0] != 'E' && tmp[0] != 'e' && tmp[0] != '\0') {
+            if(!ISDIGIT(tmp[0])) {
                 return LEPT_PARSE_INVALID_VALUE;
             }
-            c->json += 1;
+            tmp += 1;
         }
 
-        if(c->json[0]=='E'&&c->json[0]=='e'){
-            c->json += 1;//跳过E,e
-            if(!ISDIGIT(c->json[0]) && c->json[0] != '+' && c->json[0] != '-') {
+        if(tmp[0]=='\0' && *(tmp-1)=='-') {  // -
+            return LEPT_PARSE_INVALID_VALUE;
+        }
+
+        if(tmp[0]=='E' || tmp[0]=='e'){
+            tmp += 1;//跳过E,e
+            if(!ISDIGIT(tmp[0]) && tmp[0] != '+' && tmp[0] != '-' ) {
                 return LEPT_PARSE_INVALID_VALUE;
             }
 
-            if(c->json[0] == '+' || c->json[0] == '-')
-                c->json += 1;
-
-            while(c->json[0]!='\0'){
-                if(!ISDIGIT(c->json[0]))
+            if(tmp[0]=='\0'){  // 1.2e
                     return LEPT_PARSE_INVALID_VALUE;
-                c->json += 1;
+                }
+
+            if(tmp[0] == '+' || tmp[0] == '-'){
+                tmp += 1;
+                if(tmp[0]=='\0'){
+                    return LEPT_PARSE_INVALID_VALUE;
+                }
+            }
+                
+            while(tmp[0]!='\0'){
+                if(!ISDIGIT(tmp[0]))
+                    return LEPT_PARSE_INVALID_VALUE;
+                tmp += 1;
             }    
         }
 
         //当前c->json[0]指向小数点
-        if(c->json[0]=='.'){
-            c->json += 1; //跳过小数点
-            while(c->json[0]!='E'&&c->json[0]!='e'&&c->json[0]!='\0'){
-                if(!ISDIGIT(c->json[0])){
+        if(tmp[0]=='.'){
+            tmp += 1; //跳过小数点
+            while(tmp[0]!='E' && tmp[0]!='e' && tmp[0]!='\0'){
+                if(!ISDIGIT(tmp[0])){
                     return LEPT_PARSE_INVALID_VALUE;
                 }
-                c->json += 1;
+                tmp += 1;
+            }
+
+            if(*(tmp-1)=='.'){ //小数点后面没有内容，不合法--> 1.
+                return LEPT_PARSE_INVALID_VALUE;
             }
 
             //等于\0时表明校验到了结尾，校验成功
             //等于E或者e时表明还需要解析指数部分
-            if(c->json[0]=='E'&&c->json[0]=='e'){
-                c->json += 1;//跳过E,e
-                if(!ISDIGIT(c->json[0]) && c->json[0] != '+' && c->json[0] != '-') {
+            if(tmp[0]=='E' || tmp[0]=='e') {
+                tmp += 1;//跳过E,e
+               if(!ISDIGIT(tmp[0]) && tmp[0] != '+' && tmp[0] != '-' ) {
                     return LEPT_PARSE_INVALID_VALUE;
                 }
 
-                if(c->json[0] == '+' || c->json[0] == '-')
-                    c->json += 1;
+                if(tmp[0]=='\0'){  // 1.2e
+                    return LEPT_PARSE_INVALID_VALUE;
+                }
 
-                while(c->json[0]!='\0'){
-                    if(!ISDIGIT(c->json[0]))
+                if(tmp[0] == '+' || tmp[0] == '-'){
+                    tmp += 1;
+                    if(tmp[0]=='\0'){
                         return LEPT_PARSE_INVALID_VALUE;
-                    c->json += 1;
+                    }
+                }
+                
+                while(tmp[0]!='\0'){
+                    if(!ISDIGIT(tmp[0]))
+                        return LEPT_PARSE_INVALID_VALUE;
+                    tmp += 1;
                 }    
             }
         }
@@ -124,7 +149,6 @@ static int lept_parse_number(lept_context* c, lept_value* v) {
         return LEPT_PARSE_INVALID_VALUE;
     }
     
-
     v->n = strtod(c->json, &end);
     if (c->json == end)
         return LEPT_PARSE_INVALID_VALUE;

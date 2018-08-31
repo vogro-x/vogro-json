@@ -90,9 +90,15 @@ static void test_parse_number() {
 static void test_parse_invalid_value() {
     /* invalid number */
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "+0");
+    TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "00.1");
+    TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "-00.1");
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "+1");
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, ".123"); /* at least one digit before '.' */
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "1.");   /* at least one digit after '.' */
+    TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "-");   
+    TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "1.0E");  
+    TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "1.0E+");  
+    TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "1.0E-");  
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "INF");
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "inf");
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "NAN");
