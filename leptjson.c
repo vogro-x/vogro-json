@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 
 #define ISDIGIT(ch)         ((ch) >= '0' && (ch) <= '9')
 #define ISDIGIT1TO9(ch)     ((ch) >= '1' && (ch) <= '9')
@@ -24,34 +25,28 @@ static void lept_parse_whitespace(lept_context* c) {
     c->json = p;
 }
 
-/* null  = "null" */
-static int lept_parse_null(lept_context* c, lept_value* v) {
-    EXPECT(c, 'n');
-    if (c->json[0] != 'u' || c->json[1] != 'l' || c->json[2] != 'l')
-        return LEPT_PARSE_INVALID_VALUE;
-    c->json += 3;
-    v->type = LEPT_NULL;
-    return LEPT_PARSE_OK;
-}
-
-/* ture = "true" */
-static int lept_parse_true(lept_context* c, lept_value* v) {
-    EXPECT(c, 't');
-    if(c->json[0] != 'r' || c->json[1] != 'u' || c->json[2] != 'e') 
-        return LEPT_PARSE_INVALID_VALUE;
-    c->json += 3;
-    v->type = LEPT_TRUE;
-    return LEPT_PARSE_OK;
-}
-
-/* false = "false" */
-static int lept_parse_false(lept_context* c, lept_value* v) {
-    EXPECT(c, 'f');
-    if(c->json[0] != 'a' || c->json[1] != 'l' || c->json[2] != 's' || c->json[3] != 'e') 
-        return LEPT_PARSE_INVALID_VALUE;
-    c->json += 4;
-    v->type = LEPT_FALSE;
-    return LEPT_PARSE_OK;
+// parse null/true/false
+static int lept_parse_literal(lept_context* c, lept_value* v, char* json, size_t size) {
+     EXPECT(c,json[0]);
+     int i;
+     for(i=0;i<size-1;i++){
+         if(c->json[i]!=json[i+1])
+            return LEPT_PARSE_INVALID_VALUE;
+     }
+     c->json += (size-1);
+     printf("%c\n",json[0]);
+     switch (json[0]){
+        case 'n':
+            v->type=LEPT_NULL;
+            break;
+        case 't':
+            v->type=LEPT_TRUE;
+            break;
+        case 'f':
+            v->type=LEPT_FALSE;
+            break;
+     }
+     return LEPT_PARSE_OK;
 }
 
 static int lept_parse_number(lept_context* c, lept_value* v) {
@@ -159,9 +154,9 @@ static int lept_parse_number(lept_context* c, lept_value* v) {
 
 static int lept_parse_value(lept_context* c, lept_value* v) {
     switch (*c->json) {
-        case 'n':  return lept_parse_null(c, v);
-        case 't':  return lept_parse_true(c, v);
-        case 'f':  return lept_parse_false(c,v);
+        case 'n':  return lept_parse_literal(c,v,"null",4);
+        case 't':  return lept_parse_literal(c,v,"true",4);
+        case 'f':  return lept_parse_literal(c,v,"false",5);
         case '\0': return LEPT_PARSE_EXPECT_VALUE;
         default:   return lept_parse_number(c,v);
     }
