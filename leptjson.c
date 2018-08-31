@@ -34,7 +34,6 @@ static int lept_parse_literal(lept_context* c, lept_value* v, char* json, size_t
             return LEPT_PARSE_INVALID_VALUE;
      }
      c->json += (size-1);
-     printf("%c\n",json[0]);
      switch (json[0]){
         case 'n':
             v->type=LEPT_NULL;
