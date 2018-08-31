@@ -1,6 +1,7 @@
 #ifndef __LEPTJSON_H__
 #define __LEPTJSON_H__
 
+#include <stdlib.h>
 //联合，一次只能表示一种类型
 typedef enum { LEPT_NULL, LEPT_FALSE, LEPT_TRUE, LEPT_NUMBER, LEPT_STRING, LEPT_ARRAY, LEPT_OBJECT } lept_type;
 
@@ -13,6 +14,8 @@ enum {
 };
 
 typedef struct {
+    char* s;
+    size_t len;
     double n;
     lept_type type;
 }lept_value;
