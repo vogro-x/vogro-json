@@ -152,10 +152,6 @@ static int lept_parse_number(lept_context* c, lept_value* v) {
     v->type = LEPT_NUMBER;
     c->json = tmp;//此时需要移动json指针的位置到末尾
     return LEPT_PARSE_OK;
-
-     
-    
-    
 }
 
 static int lept_parse_value(lept_context* c, lept_value* v) {
