@@ -14,8 +14,10 @@
         }\
     } while(0)
 
+#define STRING_EQUALITY_JUDGMENT()
 #define EXPECT_EQ_INT(expect, actual) EXPECT_EQ_BASE((expect) == (actual), expect, actual, "%d")
 #define EXPECT_EQ_DOUBLE(expect, actual) EXPECT_EQ_BASE((expect) == (actual), expect, actual, "%lf")
+#define EXPECT_EQ_STRING(expect, actual, actual_len) EXPECT_EQ_BASE(string_equality_judgment(expect,actual,actual_len), expect, actual, "%s")
 
 #define TEST_NUMBER(expect, json)\
     do {\
@@ -33,10 +35,24 @@
         EXPECT_EQ_INT(LEPT_NULL, lept_get_type(&v));\
     } while(0)
 
+
+#define lept_init(v) do { (v)->type = LEPT_NULL; } while(0)
+
 static int main_ret = 0;
 static int test_count = 0;
 static int test_pass = 0;
 
+static int string_equality_judgment(const char * expect, const char *actual, size_t actual_len){
+    size_t i;
+    if(strlen(expect)!=actual_len)
+        return 0;
+   
+    for(i=0;i<actual_len;i++) {
+        if(expect[i]!=actual[i])
+            return 0;
+    }
+    return 1;
+}
 
 static void test_parse_null() {
     lept_value v;
@@ -120,6 +136,16 @@ static void test_parse_invalid_value() {
     
 }
 
+static void test_access_string() {
+    lept_value v;
+    lept_init(&v);
+    lept_set_string(&v, "", 0);
+    EXPECT_EQ_STRING("", lept_get_string(&v), lept_get_string_length(&v));
+    lept_set_string(&v, "Hello", 5);
+    EXPECT_EQ_STRING("Hello", lept_get_string(&v), lept_get_string_length(&v));
+    lept_free(&v);
+}
+
 static void test_parse() {
     // #if 0
     test_parse_not_sigular();
@@ -128,6 +154,7 @@ static void test_parse() {
     test_parse_false();
     test_parse_number();
     test_parse_invalid_value();
+    test_access_string();
     // #endif
 }
 
