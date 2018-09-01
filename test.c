@@ -18,6 +18,15 @@
 #define EXPECT_EQ_INT(expect, actual) EXPECT_EQ_BASE((expect) == (actual), expect, actual, "%d")
 #define EXPECT_EQ_DOUBLE(expect, actual) EXPECT_EQ_BASE((expect) == (actual), expect, actual, "%lf")
 #define EXPECT_EQ_STRING(expect, actual, actual_len) EXPECT_EQ_BASE(string_equality_judgment(expect,actual,actual_len), expect, actual, "%s")
+#define EXPECT_TRUE(actual) EXPECT_EQ_BASE((actual) != 0, "true", "false", "%s")
+#define EXPECT_FALSE(actual) EXPECT_EQ_BASE((actual) == 0, "false", "true", "%s")
+
+#if defined(_MSC_VER)
+#define EXPECT_EQ_SIZE_T(expect, actual) EXPECT_EQ_BASE((expect) == (actual), (size_t)expect, (size_t)actual, "%Iu")
+#else
+#define EXPECT_EQ_SIZE_T(expect, actual) EXPECT_EQ_BASE((expect) == (actual), (size_t)expect, (size_t)actual, "%zu")
+#endif
+
 
 #define TEST_NUMBER(expect, json)\
     do {\
@@ -59,6 +68,10 @@ static void test_parse_null() {
     v.type = LEPT_TRUE;
     EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, "null"));
     EXPECT_EQ_INT(LEPT_NULL, lept_get_type(&v));
+}
+
+static void test_set_get_boolean() {
+
 }
 
 static void test_parse_not_sigular(){
@@ -146,6 +159,67 @@ static void test_access_string() {
     lept_free(&v);
 }
 
+
+static void test_access_boolean(){
+    lept_value v;
+    lept_init(&v);
+    lept_set_string(&v, "a", 1);
+    lept_set_boolean(&v, 1);
+    EXPECT_TRUE(lept_get_boolean(&v));
+    lept_set_boolean(&v, 0);
+    EXPECT_FALSE(lept_get_boolean(&v));
+    lept_free(&v);
+}
+
+static void test_access_number() {
+    lept_value v;
+    lept_init(&v);
+    lept_set_string(&v, "a", 1);
+    lept_set_number(&v, 1234.5);
+    EXPECT_EQ_DOUBLE(1234.5, lept_get_number(&v));
+    lept_free(&v);
+}
+
+static void test_parse_array() {
+    size_t i, j;
+    lept_value v;
+
+    lept_init(&v);
+    EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, "[ ]"));
+    EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(&v));
+    EXPECT_EQ_SIZE_T(0, lept_get_array_size(&v));
+    lept_free(&v);
+
+    lept_init(&v);
+    EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, "[ null , false , true , 123 , \"abc\" ]"));
+    EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(&v));
+    EXPECT_EQ_SIZE_T(5, lept_get_array_size(&v));
+    EXPECT_EQ_INT(LEPT_NULL,   lept_get_type(lept_get_array_element(&v, 0)));
+    EXPECT_EQ_INT(LEPT_FALSE,  lept_get_type(lept_get_array_element(&v, 1)));
+    EXPECT_EQ_INT(LEPT_TRUE,   lept_get_type(lept_get_array_element(&v, 2)));
+    EXPECT_EQ_INT(LEPT_NUMBER, lept_get_type(lept_get_array_element(&v, 3)));
+    EXPECT_EQ_INT(LEPT_STRING, lept_get_type(lept_get_array_element(&v, 4)));
+    EXPECT_EQ_DOUBLE(123.0, lept_get_number(lept_get_array_element(&v, 3)));
+    EXPECT_EQ_STRING("abc", lept_get_string(lept_get_array_element(&v, 4)), lept_get_string_length(lept_get_array_element(&v, 4)));
+    lept_free(&v);
+
+    lept_init(&v);
+    EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, "[ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]"));
+    EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(&v));
+    EXPECT_EQ_SIZE_T(4, lept_get_array_size(&v));
+    for (i = 0; i < 4; i++) {
+        lept_value* a = lept_get_array_element(&v, i);
+        EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(a));
+        EXPECT_EQ_SIZE_T(i, lept_get_array_size(a));
+        for (j = 0; j < i; j++) {
+            lept_value* e = lept_get_array_element(a, j);
+            EXPECT_EQ_INT(LEPT_NUMBER, lept_get_type(e));
+            EXPECT_EQ_DOUBLE((double)j, lept_get_number(e));
+        }
+    }
+    lept_free(&v);
+}
+
 static void test_parse() {
     // #if 0
     test_parse_not_sigular();
@@ -155,6 +229,9 @@ static void test_parse() {
     test_parse_number();
     test_parse_invalid_value();
     test_access_string();
+    test_access_boolean();
+    test_access_number();
+    test_parse_array();
     // #endif
 }
 
