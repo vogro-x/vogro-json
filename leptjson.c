@@ -144,110 +144,138 @@ static int lept_parse_literal(lept_context* c, lept_value* v, char* json, size_t
      return LEPT_PARSE_OK;
 }
 
-static int lept_parse_number(lept_context* c, lept_value* v) {
-    // char* end;
+// static int lept_parse_number(lept_context* c, lept_value* v) {
+//     // char* end;
 
-    const char* tmp = c->json;
-    // 0-9,-
-    if(ISDIGIT(tmp[0])||tmp[0]=='-') {
-        if(tmp[0]=='-') {
-            tmp += 1;
-        }
+//     const char* tmp = c->json;
+//     // 0-9,-
+//     if(ISDIGIT(tmp[0])||tmp[0]=='-') {
+//         if(tmp[0]=='-') {
+//             tmp += 1;
+//         }
 
-        if(tmp[0]=='0' && tmp[1]!='.' && tmp[1] != '\0') {
-            return LEPT_PARSE_INVALID_VALUE;
-        }
+//         if(tmp[0]=='0' && tmp[1]!='.' && tmp[1] != '\0') {
+//             return LEPT_PARSE_INVALID_VALUE;
+//         }
 
         
-        while(tmp[0] != '.' && tmp[0] != 'E' && tmp[0] != 'e' && tmp[0] != '\0') {
-            if(!ISDIGIT(tmp[0])) {
-                return LEPT_PARSE_INVALID_VALUE;
-            }
-            tmp += 1;
-        }
+//         while(tmp[0] != '.' && tmp[0] != 'E' && tmp[0] != 'e' && tmp[0] != '\0') {
+//             if(!ISDIGIT(tmp[0])) {
+//                 return LEPT_PARSE_INVALID_VALUE;
+//             }
+//             tmp += 1;
+//         }
 
-        if(tmp[0]=='\0' && *(tmp-1)=='-') {  // -
-            return LEPT_PARSE_INVALID_VALUE;
-        }
+//         if(tmp[0]=='\0' && *(tmp-1)=='-') {  // -
+//             return LEPT_PARSE_INVALID_VALUE;
+//         }
 
-        if(tmp[0]=='E' || tmp[0]=='e'){
-            tmp += 1;//跳过E,e
-            if(!ISDIGIT(tmp[0]) && tmp[0] != '+' && tmp[0] != '-' ) {
-                return LEPT_PARSE_INVALID_VALUE;
-            }
+//         if(tmp[0]=='E' || tmp[0]=='e'){
+//             tmp += 1;//跳过E,e
+//             if(!ISDIGIT(tmp[0]) && tmp[0] != '+' && tmp[0] != '-' ) {
+//                 return LEPT_PARSE_INVALID_VALUE;
+//             }
 
-            if(tmp[0]=='\0'){  // 1.2e
-                    return LEPT_PARSE_INVALID_VALUE;
-                }
+//             if(tmp[0]=='\0'){  // 1.2e
+//                     return LEPT_PARSE_INVALID_VALUE;
+//                 }
 
-            if(tmp[0] == '+' || tmp[0] == '-'){
-                tmp += 1;
-                if(tmp[0]=='\0'){
-                    return LEPT_PARSE_INVALID_VALUE;
-                }
-            }
+//             if(tmp[0] == '+' || tmp[0] == '-'){
+//                 tmp += 1;
+//                 if(tmp[0]=='\0'){
+//                     return LEPT_PARSE_INVALID_VALUE;
+//                 }
+//             }
                 
-            while(tmp[0]!='\0'){
-                if(!ISDIGIT(tmp[0]))
-                    return LEPT_PARSE_INVALID_VALUE;
-                tmp += 1;
-            }    
-        }
+//             while(tmp[0]!='\0'){
+//                 if(!ISDIGIT(tmp[0]))
+//                     return LEPT_PARSE_INVALID_VALUE;
+//                 tmp += 1;
+//             }    
+//         }
 
-        //当前c->json[0]指向小数点
-        if(tmp[0]=='.'){
-            tmp += 1; //跳过小数点
-            while(tmp[0]!='E' && tmp[0]!='e' && tmp[0]!='\0'){
-                if(!ISDIGIT(tmp[0])){
-                    return LEPT_PARSE_INVALID_VALUE;
-                }
-                tmp += 1;
-            }
+//         //当前c->json[0]指向小数点
+//         if(tmp[0]=='.'){
+//             tmp += 1; //跳过小数点
+//             while(tmp[0]!='E' && tmp[0]!='e' && tmp[0]!='\0'){
+//                 if(!ISDIGIT(tmp[0])){
+//                     return LEPT_PARSE_INVALID_VALUE;
+//                 }
+//                 tmp += 1;
+//             }
 
-            if(*(tmp-1)=='.'){ //小数点后面没有内容，不合法--> 1.
-                return LEPT_PARSE_INVALID_VALUE;
-            }
+//             if(*(tmp-1)=='.'){ //小数点后面没有内容，不合法--> 1.
+//                 return LEPT_PARSE_INVALID_VALUE;
+//             }
 
-            //等于\0时表明校验到了结尾，校验成功
-            //等于E或者e时表明还需要解析指数部分
-            if(tmp[0]=='E' || tmp[0]=='e') {
-                tmp += 1;//跳过E,e
-               if(!ISDIGIT(tmp[0]) && tmp[0] != '+' && tmp[0] != '-' ) {
-                    return LEPT_PARSE_INVALID_VALUE;
-                }
+//             //等于\0时表明校验到了结尾，校验成功
+//             //等于E或者e时表明还需要解析指数部分
+//             if(tmp[0]=='E' || tmp[0]=='e') {
+//                 tmp += 1;//跳过E,e
+//                if(!ISDIGIT(tmp[0]) && tmp[0] != '+' && tmp[0] != '-' ) {
+//                     return LEPT_PARSE_INVALID_VALUE;
+//                 }
 
-                if(tmp[0]=='\0'){  // 1.2e
-                    return LEPT_PARSE_INVALID_VALUE;
-                }
+//                 if(tmp[0]=='\0'){  // 1.2e
+//                     return LEPT_PARSE_INVALID_VALUE;
+//                 }
 
-                if(tmp[0] == '+' || tmp[0] == '-'){
-                    tmp += 1;
-                    if(tmp[0]=='\0'){
-                        return LEPT_PARSE_INVALID_VALUE;
-                    }
-                }
+//                 if(tmp[0] == '+' || tmp[0] == '-'){
+//                     tmp += 1;
+//                     if(tmp[0]=='\0'){
+//                         return LEPT_PARSE_INVALID_VALUE;
+//                     }
+//                 }
                 
-                while(tmp[0]!='\0'){
-                    if(!ISDIGIT(tmp[0]))
-                        return LEPT_PARSE_INVALID_VALUE;
-                    tmp += 1;
-                }    
-            }
-        }
-    }else {
-        //首字符不为[0-9,-]
-        return LEPT_PARSE_INVALID_VALUE;
-    }
+//                 while(tmp[0]!='\0'){
+//                     if(!ISDIGIT(tmp[0]))
+//                         return LEPT_PARSE_INVALID_VALUE;
+//                     tmp += 1;
+//                 }    
+//             }
+//         }
+//     }else {
+//         //首字符不为[0-9,-]
+//         return LEPT_PARSE_INVALID_VALUE;
+//     }
     
+//     errno = 0;
+//     v->u.n = strtod(c->json, NULL);
+//     if (errno == ERANGE && (v->u.n == HUGE_VAL || v->u.n == -HUGE_VAL))
+//         return LEPT_PARSE_NUMBER_TOO_BIG;
+//     v->type = LEPT_NUMBER;
+//     c->json = tmp;//此时需要移动json指针的位置到末尾
+//     return LEPT_PARSE_OK;
+// }
+
+
+static int lept_parse_number(lept_context* c, lept_value* v) {
+    const char* p = c->json;
+    if (*p == '-') p++;
+    if (*p == '0') p++;
+    else {
+        if (!ISDIGIT1TO9(*p)) return LEPT_PARSE_INVALID_VALUE;
+        for (p++; ISDIGIT(*p); p++);
+    }
+    if (*p == '.') {
+        p++;
+        if (!ISDIGIT(*p)) return LEPT_PARSE_INVALID_VALUE;
+        for (p++; ISDIGIT(*p); p++);
+    }
+    if (*p == 'e' || *p == 'E') {
+        p++;
+        if (*p == '+' || *p == '-') p++;
+        if (!ISDIGIT(*p)) return LEPT_PARSE_INVALID_VALUE;
+        for (p++; ISDIGIT(*p); p++);
+    }
     errno = 0;
     v->u.n = strtod(c->json, NULL);
     if (errno == ERANGE && (v->u.n == HUGE_VAL || v->u.n == -HUGE_VAL))
         return LEPT_PARSE_NUMBER_TOO_BIG;
     v->type = LEPT_NUMBER;
-    c->json = tmp;//此时需要移动json指针的位置到末尾
+    c->json = p;
     return LEPT_PARSE_OK;
 }
-
 
 
 static const char* lept_parse_hex4(const char* p, unsigned* u) {
@@ -347,10 +375,10 @@ static int lept_parse_string(lept_context* c, lept_value* v) {
 }
 
 
-static int lept_parse_value(lept_context* c, lept_value* v);/*前向声明*/
+static int lept_parse_value(lept_context* c, lept_value* v);
 
 static int lept_parse_array(lept_context* c, lept_value* v) {
-    size_t size = 0;
+    size_t i, size = 0;
     int ret;
     EXPECT(c, '[');
     lept_parse_whitespace(c);
@@ -365,13 +393,13 @@ static int lept_parse_array(lept_context* c, lept_value* v) {
         lept_value e;
         lept_init(&e);
         if ((ret = lept_parse_value(c, &e)) != LEPT_PARSE_OK)
-            return ret;
+            break;
         memcpy(lept_context_push(c, sizeof(lept_value)), &e, sizeof(lept_value));
         size++;
         lept_parse_whitespace(c);
-        if (*c->json == ','){
+        if (*c->json == ',') {
             c->json++;
-             lept_parse_whitespace(c);
+            lept_parse_whitespace(c);
         }
         else if (*c->json == ']') {
             c->json++;
@@ -381,11 +409,16 @@ static int lept_parse_array(lept_context* c, lept_value* v) {
             memcpy(v->u.a.e = (lept_value*)malloc(size), lept_context_pop(c, size), size);
             return LEPT_PARSE_OK;
         }
-        else
-            return LEPT_PARSE_MISS_COMMA_OR_SQUARE_BRACKET;
+        else {
+            ret = LEPT_PARSE_MISS_COMMA_OR_SQUARE_BRACKET;
+            break;
+        }
     }
+    /* Pop and free values on the stack */
+    for (i = 0; i < size; i++)
+        lept_free((lept_value*)lept_context_pop(c, sizeof(lept_value)));
+    return ret;
 }
-
 
 
 static int lept_parse_value(lept_context* c, lept_value* v) {
@@ -393,29 +426,31 @@ static int lept_parse_value(lept_context* c, lept_value* v) {
         case 'n':  return lept_parse_literal(c,v,"null",4);
         case 't':  return lept_parse_literal(c,v,"true",4);
         case 'f':  return lept_parse_literal(c,v,"false",5);
+        case '"':  return lept_parse_string(c, v);
         case '[':  return lept_parse_array(c, v);
         case '\0': return LEPT_PARSE_EXPECT_VALUE;
         default:   return lept_parse_number(c,v);
     }
 }
 
+
 int lept_parse(lept_value* v, const char* json) {
     lept_context c;
+    int ret;
     assert(v != NULL);
     c.json = json;
-    c.stack = NULL;        /* <- */
-    c.size = c.top = 0;    /* <- */
-    v->type = LEPT_NULL;
-    // lept_init(v);
+    c.stack = NULL;
+    c.size = c.top = 0;
+    lept_init(v);
     lept_parse_whitespace(&c);
-    int ret;
     if ((ret = lept_parse_value(&c, v)) == LEPT_PARSE_OK) {
         lept_parse_whitespace(&c);
-        if (*c.json != '\0')
+        if (*c.json != '\0') {
+            v->type = LEPT_NULL;
             ret = LEPT_PARSE_ROOT_NOT_SINGULAR;
+        }
     }
-    assert(c.top == 0);    /* <- */
-    free(c.stack);     
+    assert(c.top == 0);
+    free(c.stack);
     return ret;
 }
-
