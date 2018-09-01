@@ -6,9 +6,14 @@
 #include <errno.h>   
 #include <math.h>   
 
-#define ISDIGIT(ch)         ((ch) >= '0' && (ch) <= '9')
-#define ISDIGIT1TO9(ch)     ((ch) >= '1' && (ch) <= '9')
+#define ISDIGIT(ch) ((ch) >= '0' && (ch) <= '9')
+#define ISDIGIT1TO9(ch) ((ch) >= '1' && (ch) <= '9')
 #define EXPECT(c, ch) do { assert(*c->json == (ch)); c->json++; } while(0)
+#define PUTC(c, ch) do { *(char*)lept_context_push(c, sizeof(char)) = (ch); } while(0)
+
+#ifndef LEPT_PARSE_STACK_INIT_SIZE
+#define LEPT_PARSE_STACK_INIT_SIZE 256
+#endif
 
 void lept_free(lept_value* v) {
     assert(v != NULL);
@@ -23,6 +28,26 @@ lept_type lept_get_type(const lept_value* v) {
     return v->type;
 }
 
+
+static void* lept_context_push(lept_context* c, size_t size) {
+    void* ret;
+    assert(size > 0);
+    if (c->top + size >= c->size) {
+        if (c->size == 0)
+            c->size = LEPT_PARSE_STACK_INIT_SIZE;
+        while (c->top + size >= c->size)
+            c->size += c->size >> 1;  /* c->size * 1.5 */
+        c->stack = (char*)realloc(c->stack, c->size);//扩容
+    }
+    ret = c->stack + c->top;
+    c->top += size;
+    return ret;//ret指向top处
+}
+
+static void* lept_context_pop(lept_context* c, size_t size) {
+    assert(c->top >= size);
+    return c->stack + (c->top -= size);//指向弹出之后的top处
+}
 
 int lept_get_boolean(const lept_value* v){
     assert(v!=NULL);
@@ -212,8 +237,27 @@ static int lept_parse_number(lept_context* c, lept_value* v) {
 }
 
 static int lept_parse_string(lept_context* c, lept_value* v) {
-
+    size_t head = c->top, len;
+    const char* p;
+    EXPECT(c, '\"');
+    p = c->json;
+    for (;;) {
+        char ch = *p++;
+        switch (ch) {
+            case '\"':
+                len = c->top - head;
+                lept_set_string(v, (const char*)lept_context_pop(c, len), len);
+                c->json = p;
+                return LEPT_PARSE_OK;
+            case '\0':
+                c->top = head;
+                return LEPT_PARSE_MISS_QUOTATION_MARK;
+            default:
+                PUTC(c, ch);
+        }
+    }
 }
+
 
 static int lept_parse_value(lept_context* c, lept_value* v) {
     switch (*c->json) {
@@ -229,7 +273,10 @@ int lept_parse(lept_value* v, const char* json) {
     lept_context c;
     assert(v != NULL);
     c.json = json;
+    c.stack = NULL;        /* <- */
+    c.size = c.top = 0;    /* <- */
     v->type = LEPT_NULL;
+    // lept_init(v);
     lept_parse_whitespace(&c);
     int ret;
     if ((ret = lept_parse_value(&c, v)) == LEPT_PARSE_OK) {
@@ -237,6 +284,8 @@ int lept_parse(lept_value* v, const char* json) {
         if (*c.json != '\0')
             ret = LEPT_PARSE_ROOT_NOT_SINGULAR;
     }
+    assert(c.top == 0);    /* <- */
+    free(c.stack);     
     return ret;
 }
 

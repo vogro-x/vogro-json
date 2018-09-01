@@ -10,7 +10,8 @@ enum {
     LEPT_PARSE_EXPECT_VALUE,
     LEPT_PARSE_INVALID_VALUE,
     LEPT_PARSE_ROOT_NOT_SINGULAR,
-    LEPT_PARSE_NUMBER_TOO_BIG
+    LEPT_PARSE_NUMBER_TOO_BIG,
+    LEPT_PARSE_MISS_QUOTATION_MARK
 };
 
 typedef struct {
@@ -23,6 +24,10 @@ typedef struct {
 
 typedef struct {
     const char* json;
+
+    //解析的数据暂时放在栈中
+    char* stack;
+    size_t size, top;
 }lept_context;
 
 void lept_free(lept_value* v);
