@@ -7,6 +7,7 @@ typedef enum { LEPT_NULL, LEPT_FALSE, LEPT_TRUE, LEPT_NUMBER, LEPT_STRING, LEPT_
 
 enum {
     LEPT_PARSE_OK = 0,
+    LEPT_STRINGIFY_OK,
     LEPT_PARSE_EXPECT_VALUE,
     LEPT_PARSE_INVALID_VALUE,
     LEPT_PARSE_ROOT_NOT_SINGULAR,
@@ -75,5 +76,8 @@ size_t lept_get_object_size(const lept_value* v);
 const char* lept_get_object_key(const lept_value* v, size_t index);
 size_t lept_get_object_key_length(const lept_value* v, size_t index);
 lept_value* lept_get_object_value(const lept_value* v, size_t index);
+
+
+char* lept_stringify(const lept_value* v, size_t* length);
 
 #endif
