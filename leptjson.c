@@ -27,11 +27,17 @@ void lept_free(lept_value* v) {
                 lept_free(&v->u.a.e[i]);
             free(v->u.a.e);
             break;
+        case LEPT_OBJECT:
+            for (i = 0; i < v->u.o.size; i++) {
+                free(v->u.o.m[i].k);
+                lept_free(&v->u.o.m[i].v);
+            }
+            free(v->u.o.m);
+            break;
         default: break;
     }
     v->type = LEPT_NULL;
 }
-
 
 lept_type lept_get_type(const lept_value* v) {
     assert(v != NULL);
