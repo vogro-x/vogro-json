@@ -76,5 +76,37 @@ int main(void) {
         assert(lept_get_type(vp3) == LEPT_OBJECT);
     }
     lept_free(&v6);
+
+    lept_value v7;
+    lept_init(&v7);
+    lept_set_string(&v7,"hello",5);
+
+    size_t len=0;
+    char *str =lept_stringify(&v7,&len);
+    printf("%s,lenght:%lu\n",str,len);
+
+    lept_free(&v7);
+
+
+    lept_value v8;
+    size_t index;
+    lept_init(&v8);
+    lept_parse(&v8, "{\"name\":\"Milo\", \"gender\":\"M\"}");
+    index = lept_find_object_index(&v8, "name", 4);
+    if (index != LEPT_KEY_NOT_EXIST) {
+        lept_value* v = lept_get_object_value(&v8, index);
+        printf("%s\n", lept_get_string(v));
+    }
+    lept_free(&v8);
+
+    lept_value v9, *v_tmp;
+    lept_init(&v9);
+    lept_parse(&v9, "{\"name\":\"Milo\", \"gender\":\"M\"}");
+    if ((v_tmp = lept_find_object_value(&v9, "name", 4)) != NULL)
+        printf("%s\n", lept_get_string(v_tmp));
+    lept_free(&v9);
+    lept_free(v_tmp);
     return 0;
+    
 }
+

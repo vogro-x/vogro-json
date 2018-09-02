@@ -144,6 +144,22 @@ lept_value* lept_get_object_value(const lept_value* v, size_t index) {
     return &v->u.o.m[index].v;
 }
 
+#define LEPT_KEY_NOT_EXIST ((size_t)-1)
+
+size_t lept_find_object_index(const lept_value* v, const char* key, size_t klen) {
+    size_t i;
+    assert(v != NULL && v->type == LEPT_OBJECT && key != NULL);
+    for (i = 0; i < v->u.o.size; i++)
+        if (v->u.o.m[i].klen == klen && memcmp(v->u.o.m[i].k, key, klen) == 0)
+            return i;
+    return LEPT_KEY_NOT_EXIST;
+}
+
+lept_value* lept_find_object_value(lept_value* v, const char* key, size_t klen) {
+    size_t index = lept_find_object_index(v, key, klen);
+    return index != LEPT_KEY_NOT_EXIST ? &v->u.o.m[index].v : NULL;
+}
+
 static void lept_parse_whitespace(lept_context* c) {
     const char *p = c->json;
     while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r')
